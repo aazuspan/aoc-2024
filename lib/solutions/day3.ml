@@ -1,14 +1,3 @@
-(** [find_all_matches_idx p s] returns all substrings and their index matching pattern [p] in [s] *)
-let find_all_matches_idx p s =
-  let rec aux acc i =
-    try
-      let start = Str.search_forward p s i in
-      let substr = Str.matched_string s in
-      aux ((start, substr) :: acc) (start + String.length substr)
-    with Not_found -> acc
-  in
-  aux [] 0
-
 (** [parse_mul s] parses the operands x and y from [s] in the form  op(x, y) *)
 let parse_mul s =
   List.map int_of_string @@ Util.Regex.find_all_matches (Str.regexp "[0-9]+") s
