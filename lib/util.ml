@@ -19,6 +19,15 @@ module List = struct
     match l with
     | [] | [ _ ] -> []
     | h1 :: h2 :: t -> (h1, h2) :: pairs (h2 :: t)
+
+  let range ?(start=0) end_excl = 
+    let len = end_excl - start in
+    List.init len (fun x -> x + start)
+
+  (** [product l1 l2] is the Cartesian product of [l1] and [l2] *)
+  let product l1 l2 =
+    l1 |> List.map (fun e1 -> l2 |> List.map (fun e2 -> (e1, e2))) |> List.concat
+
 end
 
 module String = struct
@@ -66,4 +75,57 @@ module Regex = struct
       with Not_found -> acc
     in
     aux [] 0
+end
+
+module Matrix = struct
+  type 'a t = 'a array array [@@deriving show]
+
+  let height (t : 'a t) = Array.length t
+  let width (t : 'a t) = Array.length t.(0)
+
+  let columns t =
+    let col_nums = List.range (width t) |> Array.of_list in
+    Array.map (fun col -> Array.map (fun row -> row.(col)) t) col_nums
+
+  (** [diagonal t offset] is the array of values on the main diagonal with x offset [t]*)
+  let diagonal t offset =
+    let h = height t in
+    let w = width t in
+
+    let max_dim = max h w in
+    let idxs =
+      List.range max_dim
+      |> List.map (fun x -> (x, x + offset))
+      |> List.filter (fun (x, y) ->
+             match (x, y) with
+             | y, _ when y < 0 || y >= h -> false
+             | _, x when x < 0 || x >= w -> false
+             | _ -> true)
+    in
+
+    Array.map (fun (y, x) -> t.(y).(x)) (Array.of_list idxs)
+
+  let flip_ud t =
+    List.range (height t)
+    |> Array.of_list
+    |> Array.map (fun i -> t.(height t - 1 - i))
+
+  let flip_lr t =
+    let col_nums = List.range (width t) |> Array.of_list in
+    Array.map
+      (fun row -> Array.map (fun col -> row.(width t - 1 - col)) col_nums)
+      t
+
+  (** [slice t x y w h] is the [w]x[h] chunk of matrix [t] starting at ([x], [y]) *)
+  let slice t x y ~w ~h =
+    let placeholder = t.(0).(0) in
+    let block = Array.make_matrix h w placeholder in
+
+    for row = 0 to h - 1 do
+      for col = 0 to w - 1 do
+        block.(row).(col) <- t.(row + y).(col + x)
+      done
+    done;
+    block
+
 end
